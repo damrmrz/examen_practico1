@@ -1,3 +1,4 @@
+# Examen Practico 1 - Monitor de Inventario EcoMarket
 import asyncio
 import logging
 from abc import ABC, abstractmethod
@@ -8,7 +9,7 @@ import aiohttp
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
 
-# ── Configuración ──────────────────────────────────────────────────────────────
+# ── Configuración
 BASE_URL       = "http://ecomarket.local/api/v1"
 TOKEN          = "eyJ0eXAiO..."          # reemplazar con el token del examen
 INTERVALO_BASE = 5
@@ -16,13 +17,13 @@ INTERVALO_MAX  = 60
 TIMEOUT        = 10
 
 
-# ── Interfaz Observer ──────────────────────────────────────────────────────────
+# ── Interfaz Observer 
 class Observador(ABC):
     @abstractmethod
     async def actualizar(self, inventario: dict) -> None: ...
 
 
-# ── Observable ────────────────────────────────────────────────────────────────
+# ── Observable 
 class MonitorInventario:
     def __init__(self):
         self._observadores: list[Observador] = []
@@ -31,7 +32,7 @@ class MonitorInventario:
         self._ejecutando:    bool = False
         self._intervalo:     float = INTERVALO_BASE
 
-    # ── Gestión de observadores ────────────────────────────────────────────────
+    # ── Gestión de observadores 
     def suscribir(self, obs: Observador) -> None:
         self._observadores.append(obs)
 
@@ -47,7 +48,7 @@ class MonitorInventario:
             except Exception as e:
                 log.error(f"Error en observador {obs.__class__.__name__}: {e}")
 
-    # ── GET /inventario ────────────────────────────────────────────────────────
+    # ── GET /inventario 
     async def _consultar_inventario(self) -> dict | None:
         headers = {
             "Authorization": f"Bearer {TOKEN}",
@@ -101,7 +102,7 @@ class MonitorInventario:
             log.error(f"Error inesperado: {e}")
             return None
 
-    # ── Ciclo de polling ───────────────────────────────────────────────────────
+    # ── Ciclo de polling 
     async def iniciar(self) -> None:
         self._ejecutando = True
         log.info("Monitor iniciado")
@@ -111,7 +112,7 @@ class MonitorInventario:
                 self._ultimo_estado = datos
                 self._intervalo = INTERVALO_BASE
                 await self._notificar(datos)
-            await asyncio.sleep(self._intervalo)   # ← no bloqueante
+            await asyncio.sleep(self._intervalo)   #  no bloqueante
         log.info("Monitor detenido")
 
     def detener(self) -> None:
@@ -119,7 +120,7 @@ class MonitorInventario:
         self._ejecutando = False
 
 
-# ── Observadores concretos ─────────────────────────────────────────────────────
+# ── Observadores concretos 
 class ModuloCompras(Observador):
     async def actualizar(self, inventario: dict) -> None:
         bajos = [p for p in inventario.get("productos", [])
@@ -160,7 +161,7 @@ class ModuloAlertas(Observador):
                     log.error(f"[ALERTAS] Error al enviar alerta para {p['id']}: {e}")
 
 
-# ── Punto de entrada ───────────────────────────────────────────────────────────
+# ── Punto de entrada 
 async def main():
     monitor = MonitorInventario()
     monitor.suscribir(ModuloCompras())
